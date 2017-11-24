@@ -1,0 +1,17 @@
+mkdir src res obj lib bin docs
+
+keytool -genkeypair -validity 10000 -dname "CN=company name, OU=organisational unit, O=organisation, L=location, S=state, C=country code" -keystore ./AndroidTest.keystore -storepass password -keypass password -alias AndroidTestKey -keyalg RSA -v
+
+aapt package -v -f -m -S res -J src -M AndroidManifest.xml -I  $PREFIX/share/java/android.jar
+
+javac -verbose -d obj -classpath $PREFIX/share/java/android.jar:./obj -sourcepath src $(find src -type f -name "*.java")
+
+dx --dex --verbose --output=./bin/classes.dex obj lib
+
+aapt package -v -f -M AndroidManifest.xml -S res -I $PREFIX/share/java/android.jar -F ./bin/AndroidTest.unsigned.apk bin
+
+jarsigner -verbose -keystore AndroidTest.keystore -storepass password -keypass password -signedjar ./bin/AndroidTest.signed.apk ./bin/AndroidTest.unsigned.apk AndroidTestKey
+
+zipalign -v -f 4 ./bin/AndroidTest.signed.apk ./bin/AndroidTest.apk
+
+javadoc -verbose -d docs -classpath $PREFIX/share/java/android.jar:./obj -sourcepath src -author -package -use -splitIndex -version -windowtitle 'AndroidTest' -doctitle 'AndroidTest' $(find src -type f -name "*.java")
